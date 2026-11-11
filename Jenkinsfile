@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -10,7 +11,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $DOCKER_IMAGE:$DOCKER_TAG .'
+                bat 'docker build -t %DOCKER_IMAGE%:%DOCKER_TAG% .'
             }
         }
 
@@ -21,25 +22,26 @@ pipeline {
                     usernameVariable: 'USER',
                     passwordVariable: 'PASS'
                 )]) {
-                    sh 'echo $PASS | docker login -u $USER --password-stdin'
+                    bat 'echo %PASS% | docker login -u %USER% --password-stdin'
                 }
             }
         }
 
         stage('Push Image') {
             steps {
-                sh 'docker push $DOCKER_IMAGE:$DOCKER_TAG'
+                bat 'docker push %DOCKER_IMAGE%:%DOCKER_TAG%'
             }
         }
 
         stage('Deploy Container') {
             steps {
-                sh '''
-                docker stop myapp-container || true
-                docker rm myapp-container || true
-                docker run -d -p 5000:5000 --name myapp-container $DOCKER_IMAGE:$DOCKER_TAG
+                bat '''
+                docker stop myapp-container 2>NUL || exit /b 0
+                docker rm myapp-container 2>NUL || exit /b 0
+                docker run -d -p 5000:5000 --name myapp-container %DOCKER_IMAGE%:%DOCKER_TAG%
                 '''
             }
         }
     }
 }
+
