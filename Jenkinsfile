@@ -58,7 +58,27 @@ stage('Login to DockerHub') {
         }
     }
 }
+stage('Docker Environment Check') {
+    steps {
+        powershell '''
+            Write-Host "Windows User:"
+            whoami
 
+            Write-Host "Docker Executable:"
+            (Get-Command docker).Source
+
+            Write-Host "Docker Version:"
+            docker --version
+
+            Write-Host "User Profile:"
+            Write-Host $env:USERPROFILE
+
+            Write-Host "Proxy Configuration:"
+            Write-Host "HTTP_PROXY present: $([bool]$env:HTTP_PROXY)"
+            Write-Host "HTTPS_PROXY present: $([bool]$env:HTTPS_PROXY)"
+        '''
+    }
+}
 
         stage('Push Image') {
             steps {
