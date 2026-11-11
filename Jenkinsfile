@@ -15,17 +15,23 @@ pipeline {
             }
         }
 
-        stage('Login to DockerHub') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'USER',
-                    passwordVariable: 'PASS'
-                )]) {
-                    bat 'echo %PASS% | docker login -u %USER% --password-stdin'
-                }
-            }
+      stage('Login to DockerHub') {
+    steps {
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'dockerhub-creds',
+                usernameVariable: 'DOCKER_USER',
+                passwordVariable: 'DOCKER_TOKEN'
+            )
+        ]) {
+            bat '''
+                powershell -NoProfile -NonInteractive -Command "$env:DOCKER_TOKEN | docker login -u $env:DOCKER_USER --password-stdin"
+
+                if errorlevel 1 exit /b 1
+            '''
         }
+    }
+}
 
         stage('Push Image') {
             steps {
