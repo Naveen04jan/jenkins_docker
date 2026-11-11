@@ -25,8 +25,7 @@ pipeline {
             )
         ]) {
             bat '''
-                powershell -NoProfile -NonInteractive -Command "$env:DOCKER_TOKEN | docker login -u $env:DOCKER_USER --password-stdin"
-
+                powershell -NoProfile -NonInteractive -Command "$env:DOCKER_TOKEN | docker login -u $env:DOCKER_USER --password-stdin; exit $LASTEXITCODE"
                 if errorlevel 1 exit /b 1
             '''
         }
