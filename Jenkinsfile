@@ -15,33 +15,30 @@ pipeline {
             }
         }
 
-        stage('Login to DockerHub') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-creds',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_TOKEN'
-                    )
-                ]) {
-                    powershell '''
-                        $username = $env:DOCKER_USER.Trim()
-                        $token = $env:DOCKER_TOKEN.Trim()
+      stage('Login to DockerHub') {
+    steps {
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'dockerhub-credentials',
+                usernameVariable: 'DOCKER_USER',
+                passwordVariable: 'DOCKER_TOKEN'
+            )
+        ]) {
+            powershell '''
+                $ErrorActionPreference = "Stop"
 
-                        $token | docker login `
-                            --username $username `
-                            --password-stdin
+                $env:DOCKER_TOKEN |
+                    docker login -u $env:DOCKER_USER --password-stdin
 
-                        if ($LASTEXITCODE -ne 0) {
-                            throw "DockerHub login failed"
-                        }
-
-                        Write-Host "DockerHub login successful"
-                    '''
+                if ($LASTEXITCODE -ne 0) {
+                    throw "DockerHub login failed"
                 }
-            }
-        }
 
+                Write-Host "DockerHub login successful"
+            '''
+        }
+    }
+}
         stage('Push Image') {
             steps {
                 bat 'docker push %DOCKER_IMAGE%:%DOCKER_TAG%'
