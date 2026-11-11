@@ -4,38 +4,61 @@ pipeline {
 
     stages {
 
-        stage('Build Docker Image') {
-            steps {
-                bat '''
-                    docker build -t naveen04jan/my-python-app3:latest .
-                '''
-            }
-        }
+        
+stage('Login to DockerHub') {
+    steps {
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'dockerhub-credentials',
+                usernameVariable: 'DOCKER_USER',
+                passwordVariable: 'DOCKER_TOKEN'
+            )
+        ]) {
+            powershell '''
+                $ErrorActionPreference = "Stop"
 
-        stage('Login to DockerHub') {
-            steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-creds',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_TOKEN'
-                    )
-                ]) {
-                    powershell '''
-                        $ErrorActionPreference = "Stop"
+                $psi = New-Object System.Diagnostics.ProcessStartInfo
+                $psi.FileName = "docker.exe"
+                $psi.Arguments = "login -u $env:DOCKER_USER --password-stdin"
+                $psi.UseShellExecute = $false
+                $psi.RedirectStandardInput = $true
+                $psi.RedirectStandardOutput = $true
+                $psi.RedirectStandardError = $true
+                $psi.CreateNoWindow = $true
 
-                        $env:DOCKER_TOKEN |
-                            docker login -u $env:DOCKER_USER --password-stdin
+                $process = New-Object System.Diagnostics.Process
+                $process.StartInfo = $psi
 
-                        if ($LASTEXITCODE -ne 0) {
-                            throw "DockerHub login failed"
-                        }
+                [void]$process.Start()
 
-                        Write-Host "DockerHub login successful"
-                    '''
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes(
+                    $env:DOCKER_TOKEN + "`n"
+                )
+
+                $process.StandardInput.BaseStream.Write(
+                    $bytes, 0, $bytes.Length
+                )
+
+                $process.StandardInput.Close()
+
+                $output = $process.StandardOutput.ReadToEnd()
+                $errorOutput = $process.StandardError.ReadToEnd()
+
+                $process.WaitForExit()
+
+                Write-Host $output
+
+                if ($process.ExitCode -ne 0) {
+                    Write-Host $errorOutput
+                    throw "DockerHub login failed"
                 }
-            }
+
+                Write-Host "DockerHub login successful"
+            '''
         }
+    }
+}
+
 
         stage('Push Image') {
             steps {
