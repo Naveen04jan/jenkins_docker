@@ -41,7 +41,7 @@ pipeline {
                 withEnv(["DOCKER_CONFIG=${env.WORKSPACE}\\.docker"]) {
                     withCredentials([
                         usernamePassword(
-                            credentialsId: 'dockerhub-creds',
+                            credentialsId: 'dockerhub-login',
                             usernameVariable: 'DOCKER_USER',
                             passwordVariable: 'DOCKER_TOKEN'
                         )
